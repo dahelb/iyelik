@@ -610,24 +610,16 @@ function render() {
 
   if (input && !state.answered) {
     input.focus();
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') handleSubmit();
-    });
   }
 
-  if (state.answered) {
-    setTimeout(() => {
-      document.addEventListener('keydown', function onEnterNext(e) {
-        if (e.key === 'Enter') {
-          document.removeEventListener('keydown', onEnterNext);
-          handleNext();
-        }
-      });
-    }, 50);
+  if (submitBtn) {
+    submitBtn.addEventListener('click', handleSubmit);
+    submitBtn.addEventListener('touchend', (e) => { e.preventDefault(); handleSubmit(); });
   }
-
-  if (submitBtn) submitBtn.addEventListener('click', handleSubmit);
-  if (nextBtn) nextBtn.addEventListener('click', handleNext);
+  if (nextBtn) {
+    nextBtn.addEventListener('click', handleNext);
+    nextBtn.addEventListener('touchend', (e) => { e.preventDefault(); handleNext(); });
+  }
 
   const refToggle = document.getElementById('refToggle');
   if (refToggle) {
@@ -800,6 +792,25 @@ function handleNext() {
   }
   render();
 }
+
+// ===================== GLOBAL KEY HANDLER =====================
+
+let lastSubmitTime = 0;
+
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const now = Date.now();
+    if (state.answered) {
+      // Require at least 300ms after submit before allowing next
+      if (now - lastSubmitTime > 300) {
+        handleNext();
+      }
+    } else {
+      lastSubmitTime = now;
+      handleSubmit();
+    }
+  }
+});
 
 // ===================== INIT =====================
 
