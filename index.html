@@ -549,6 +549,7 @@ function newQuestion() {
   state.currentPerson = pickRandom(PERSONS);
   state.answered = false;
   state.wasCorrect = false;
+  state.lastAnswer = '';
 }
 
 function startQuiz() {
@@ -682,6 +683,7 @@ function renderCard(correctAnswerStr) {
           autocapitalize="off"
           spellcheck="false"
           ${state.answered ? 'disabled' : ''}
+          ${state.answered && state.lastAnswer ? `value="${state.lastAnswer}"` : ''}
         />
         ${state.answered
           ? `<button class="submit-btn" id="nextBtn">Weiter →</button>`
@@ -793,6 +795,7 @@ function handleSubmit() {
   const input = document.getElementById('answerInput');
   if (!input || !input.value.trim()) return;
 
+  state.lastAnswer = input.value.trim();
   const isCorrect = checkAnswer(input.value);
   state.answered = true;
   state.wasCorrect = isCorrect;
