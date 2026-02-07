@@ -302,6 +302,22 @@
     font-size: 1rem;
   }
 
+  .irregular-notice {
+    margin-top: 0.8rem;
+    padding: 0.7rem 1rem;
+    border-radius: 8px;
+    background: #f39c1212;
+    border: 1px solid #f39c1230;
+    color: var(--warn);
+    font-size: 0.82rem;
+    line-height: 1.5;
+    animation: fadeIn 0.25s ease;
+  }
+
+  .irregular-notice strong {
+    color: var(--text);
+  }
+
   /* Reference table */
   .ref-section {
     margin-top: 2.5rem;
@@ -426,8 +442,8 @@ const NOUNS = [
   { word: 'ad', meaning: 'Name', endsVowel: false, vowelType: 'a', altForm: 'ad' },
   { word: 'yol', meaning: 'Weg', endsVowel: false, vowelType: 'o' },
   { word: 'kız', meaning: 'Mädchen', endsVowel: false, vowelType: 'ı' },
-  { word: 'kalp', meaning: 'Herz', endsVowel: false, vowelType: 'a', softening: 'kalb' },
-  { word: 'çocuk', meaning: 'Kind', endsVowel: false, vowelType: 'u' },
+  { word: 'kalp', meaning: 'Herz', endsVowel: false, vowelType: 'a', softening: 'kalb', harmonyOverride: 'i' },
+  { word: 'çocuk', meaning: 'Kind', endsVowel: false, vowelType: 'u', softening: 'çocuğ' },
   { word: 'kitap', meaning: 'Buch', endsVowel: false, vowelType: 'a', softening: 'kitab' },
   { word: 'ağaç', meaning: 'Baum', endsVowel: false, vowelType: 'a', softening: 'ağac' },
   { word: 'renk', meaning: 'Farbe', endsVowel: false, vowelType: 'e', softening: 'reng' },
@@ -462,8 +478,8 @@ function isBackVowel(v) {
 function getPossessiveForm(noun, personKey) {
   const base = noun.softening || noun.word;
   const lastV = getLastVowel(noun.word);
-  const hv = getHarmonyVowel(lastV);
-  const back = isBackVowel(lastV);
+  const hv = noun.harmonyOverride || getHarmonyVowel(lastV);
+  const back = noun.harmonyOverride ? isBackVowel(noun.harmonyOverride) : isBackVowel(lastV);
 
   // Determine the stem to use (with consonant softening if applicable)
   let stem = noun.word;
@@ -673,8 +689,27 @@ function renderCard(correctAnswerStr) {
         }
       </div>
       ${feedbackHTML}
+      ${state.answered ? getIrregularNotice(noun) : ''}
     </div>
   `;
+}
+
+function getIrregularNotice(noun) {
+  const notices = [];
+
+  if (noun.softening) {
+    const original = noun.word.slice(-1);
+    const softened = noun.softening.slice(-1);
+    notices.push(`Konsonanten-Erweichung: <strong>${noun.word}</strong> → <strong>${noun.softening}-</strong> (${original} → ${softened} vor Vokal-Suffix)`);
+  }
+
+  if (noun.harmonyOverride) {
+    notices.push(`Unregelmäßige Vokalharmonie: Lehnwort mit <strong>-${noun.harmonyOverride}-</strong> statt erwartetem <strong>-${getHarmonyVowel(getLastVowel(noun.word))}-</strong>`);
+  }
+
+  if (notices.length === 0) return '';
+
+  return `<div class="irregular-notice">⚠ ${notices.join('<br>⚠ ')}</div>`;
 }
 
 function renderQuizResult() {
