@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Türkisch Possessiv-Trainer</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #1a1512;
+    --surface: #241f1a;
+    --surface-hover: #2e2722;
+    --card: #2a2420;
+    --accent: #e84c3d;
+    --accent-glow: #e84c3d44;
+    --success: #2ecc71;
+    --success-glow: #2ecc7133;
+    --warn: #f39c12;
+    --text: #f0e6da;
+    --text-dim: #9a8d80;
+    --text-muted: #6b5f53;
+    --border: #3a322b;
+    --turkish-red: #e84c3d;
+    --turkish-white: #f0e6da;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Subtle background pattern */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 0%, #e84c3d08 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 100%, #e84c3d05 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app {
+    position: relative;
+    z-index: 1;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .header h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 800;
+    font-size: 2.4rem;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 0.3rem;
+  }
+
+  .header h1 span {
+    color: var(--accent);
+  }
+
+  .header p {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+
+  .stat-value {
+    font-weight: 600;
+    color: var(--text);
+    font-size: 1.05rem;
+  }
+
+  .stat-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .stat-dot.correct { background: var(--success); box-shadow: 0 0 8px var(--success-glow); }
+  .stat-dot.wrong { background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
+  .stat-dot.streak { background: var(--warn); }
+
+  /* Mode selector */
+  .mode-selector {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 4px;
+    border: 1px solid var(--border);
+  }
+
+  .mode-btn {
+    flex: 1;
+    padding: 0.6rem 0.8rem;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+
+  .mode-btn.active {
+    background: var(--card);
+    color: var(--text);
+    box-shadow: 0 2px 8px #0003;
+  }
+
+  .mode-btn:hover:not(.active) {
+    color: var(--text);
+  }
+
+  /* Question card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    animation: cardIn 0.35s ease;
+  }
+
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--warn));
+    opacity: 0.7;
+  }
+
+  .prompt-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    margin-bottom: 0.6rem;
+  }
+
+  .prompt-word {
+    font-family: 'Fraunces', serif;
+    font-size: 1.9rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    line-height: 1.2;
+  }
+
+  .prompt-translation {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    font-style: italic;
+  }
+
+  .prompt-person {
+    display: inline-block;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    padding: 0.3rem 0.75rem;
+    border-radius: 6px;
+    margin-bottom: 1.2rem;
+  }
+
+  /* Input area */
+  .input-row {
+    display: flex;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+
+  .answer-input {
+    flex: 1;
+    padding: 0.85rem 1rem;
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 1.05rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .answer-input:focus {
+    border-color: var(--accent);
+  }
+
+  .answer-input.correct {
+    border-color: var(--success);
+    background: #2ecc7108;
+  }
+
+  .answer-input.wrong {
+    border-color: var(--accent);
+    background: #e84c3d08;
+  }
+
+  .submit-btn {
+    padding: 0.85rem 1.4rem;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  .submit-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+
+  .submit-btn:active {
+    transform: translateY(0);
+  }
+
+  /* Feedback */
+  .feedback {
+    margin-top: 1.2rem;
+    padding: 1rem 1.2rem;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    animation: fadeIn 0.25s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .feedback.correct {
+    background: #2ecc7112;
+    border: 1px solid #2ecc7133;
+    color: var(--success);
+  }
+
+  .feedback.wrong {
+    background: #e84c3d10;
+    border: 1px solid #e84c3d30;
+    color: #f0a090;
+  }
+
+  .feedback .correct-answer {
+    font-weight: 600;
+    color: var(--text);
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 1rem;
+  }
+
+  /* Reference table */
+  .ref-section {
+    margin-top: 2.5rem;
+  }
+
+  .ref-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.7rem 1rem;
+    color: var(--text-dim);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    cursor: pointer;
+    width: 100%;
+    transition: all 0.2s;
+  }
+
+  .ref-toggle:hover {
+    border-color: var(--text-muted);
+    color: var(--text);
+  }
+
+  .ref-toggle .arrow {
+    transition: transform 0.25s;
+    font-size: 0.7rem;
+  }
+
+  .ref-toggle.open .arrow {
+    transform: rotate(90deg);
+  }
+
+  .ref-table-wrap {
+    display: none;
+    margin-top: 1rem;
+    overflow-x: auto;
+  }
+
+  .ref-table-wrap.open {
+    display: block;
+    animation: fadeIn 0.3s ease;
+  }
+
+  .ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.82rem;
+  }
+
+  .ref-table th {
+    text-align: left;
+    padding: 0.6rem 0.8rem;
+    background: var(--surface);
+    color: var(--text-dim);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ref-table td {
+    padding: 0.55rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .ref-table tr:last-child td {
+    border-bottom: none;
+  }
+
+  .ref-table .suffix {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* Responsive */
+  @media (max-width: 500px) {
+    .app { padding: 1.2rem 1rem 3rem; }
+    .header h1 { font-size: 1.8rem; }
+    .prompt-word { font-size: 1.5rem; }
+    .input-row { flex-direction: column; }
+    .stats-bar { gap: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app" id="app"></div>
+
+<script>
+// ===================== DATA =====================
+
+const PERSONS = [
+  { key: 'ben', label: 'Benim (mein)', suffix_v: 'm', suffix_c: 'ım/im/um/üm' },
+  { key: 'sen', label: 'Senin (dein)', suffix_v: 'n', suffix_c: 'ın/in/un/ün' },
+  { key: 'o', label: 'Onun (sein/ihr)', suffix_v: 'sı/si/su/sü', suffix_c: 'ı/i/u/ü' },
+  { key: 'biz', label: 'Bizim (unser)', suffix_v: 'mız/miz/muz/müz', suffix_c: 'ımız/imiz/umuz/ümüz' },
+  { key: 'siz', label: 'Sizin (euer/Ihr)', suffix_v: 'nız/niz/nuz/nüz', suffix_c: 'ınız/iniz/unuz/ünüz' },
+  { key: 'onlar', label: 'Onların (ihr/deren)', suffix_v: 'ları/leri', suffix_c: 'ları/leri' },
+];
+
+const NOUNS = [
+  // Vowel-ending nouns
+  { word: 'araba', meaning: 'Auto', endsVowel: true, vowelType: 'a' },
+  { word: 'oda', meaning: 'Zimmer', endsVowel: true, vowelType: 'a' },
+  { word: 'anne', meaning: 'Mutter', endsVowel: true, vowelType: 'e' },
+  { word: 'köpek', meaning: 'Hund', endsVowel: false, vowelType: 'e', softening: 'köpeğ' },
+  { word: 'kapı', meaning: 'Tür', endsVowel: true, vowelType: 'ı' },
+  { word: 'okul', meaning: 'Schule', endsVowel: false, vowelType: 'u' },
+  { word: 'masa', meaning: 'Tisch', endsVowel: true, vowelType: 'a' },
+  { word: 'baba', meaning: 'Vater', endsVowel: true, vowelType: 'a' },
+  { word: 'dede', meaning: 'Großvater', endsVowel: true, vowelType: 'e' },
+  // Consonant-ending nouns
+  { word: 'ev', meaning: 'Haus', endsVowel: false, vowelType: 'e' },
+  { word: 'iş', meaning: 'Arbeit', endsVowel: false, vowelType: 'i' },
+  { word: 'gün', meaning: 'Tag', endsVowel: false, vowelType: 'ü' },
+  { word: 'göz', meaning: 'Auge', endsVowel: false, vowelType: 'ö' },
+  { word: 'ad', meaning: 'Name', endsVowel: false, vowelType: 'a', altForm: 'ad' },
+  { word: 'yol', meaning: 'Weg', endsVowel: false, vowelType: 'o' },
+  { word: 'kız', meaning: 'Mädchen', endsVowel: false, vowelType: 'ı' },
+  { word: 'kalp', meaning: 'Herz', endsVowel: false, vowelType: 'a', softening: 'kalb' },
+  { word: 'çocuk', meaning: 'Kind', endsVowel: false, vowelType: 'u' },
+  { word: 'kitap', meaning: 'Buch', endsVowel: false, vowelType: 'a', softening: 'kitab' },
+  { word: 'ağaç', meaning: 'Baum', endsVowel: false, vowelType: 'a', softening: 'ağac' },
+  { word: 'renk', meaning: 'Farbe', endsVowel: false, vowelType: 'e', softening: 'reng' },
+  { word: 'süt', meaning: 'Milch', endsVowel: false, vowelType: 'ü' },
+  { word: 'el', meaning: 'Hand', endsVowel: false, vowelType: 'e' },
+  { word: 'baş', meaning: 'Kopf', endsVowel: false, vowelType: 'a' },
+  { word: 'ayak', meaning: 'Fuß', endsVowel: false, vowelType: 'a', softening: 'ayağ' },
+  { word: 'söz', meaning: 'Wort/Versprechen', endsVowel: false, vowelType: 'ö' },
+  { word: 'kuş', meaning: 'Vogel', endsVowel: false, vowelType: 'u' },
+  { word: 'düş', meaning: 'Traum', endsVowel: false, vowelType: 'ü' },
+];
+
+// Vowel harmony helper
+function getHarmonyVowel(lastVowel) {
+  // 4-way harmony: a,ı → ı; e,i → i; o,u → u; ö,ü → ü
+  const map = { 'a': 'ı', 'ı': 'ı', 'e': 'i', 'i': 'i', 'o': 'u', 'u': 'u', 'ö': 'ü', 'ü': 'ü' };
+  return map[lastVowel] || 'i';
+}
+
+function getLastVowel(word) {
+  const vowels = 'aeıioöuü';
+  for (let i = word.length - 1; i >= 0; i--) {
+    if (vowels.includes(word[i])) return word[i];
+  }
+  return 'a';
+}
+
+function isBackVowel(v) {
+  return 'aıou'.includes(v);
+}
+
+function getPossessiveForm(noun, personKey) {
+  const base = noun.softening || noun.word;
+  const lastV = getLastVowel(noun.word);
+  const hv = getHarmonyVowel(lastV);
+  const back = isBackVowel(lastV);
+
+  // Determine the stem to use (with consonant softening if applicable)
+  let stem = noun.word;
+  // Consonant softening: p→b, ç→c, k→ğ/g, t→d only before vowel suffixes for 3rd person etc.
+  const needsSoftening = noun.softening != null;
+
+  function softenedStem() {
+    return noun.softening || noun.word;
+  }
+
+  if (noun.endsVowel) {
+    // Vowel-ending nouns
+    switch (personKey) {
+      case 'ben': return stem + 'm';
+      case 'sen': return stem + 'n';
+      case 'o': return stem + 's' + hv;
+      case 'biz': return stem + 'm' + hv + 'z';
+      case 'siz': return stem + 'n' + hv + 'z';
+      case 'onlar': return stem + (back ? 'ları' : 'leri');
+    }
+  } else {
+    // Consonant-ending nouns
+    const s = needsSoftening ? softenedStem() : stem;
+    switch (personKey) {
+      case 'ben': return s + hv + 'm';
+      case 'sen': return s + hv + 'n';
+      case 'o': return needsSoftening ? s + hv : stem + hv;
+      case 'biz': return s + hv + 'm' + hv + 'z';
+      case 'siz': return s + hv + 'n' + hv + 'z';
+      case 'onlar': return stem + (back ? 'ları' : 'leri');
+    }
+  }
+}
+
+// Generate correct answer(s) — returns array of acceptable answers
+function getCorrectAnswers(noun, personKey) {
+  const primary = getPossessiveForm(noun, personKey);
+  const answers = [primary];
+  // Some words have known alternative forms — add them here if needed
+  return answers.map(a => a.toLowerCase().trim());
+}
+
+// ===================== STATE =====================
+
+let state = {
+  mode: 'practice',    // practice | quiz
+  currentNoun: null,
+  currentPerson: null,
+  answered: false,
+  wasCorrect: false,
+  correctCount: 0,
+  wrongCount: 0,
+  streak: 0,
+  bestStreak: 0,
+  refOpen: false,
+  quizQueue: [],
+  quizIndex: 0,
+  quizResults: [],
+};
+
+function pickRandom(arr) {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
+function newQuestion() {
+  state.currentNoun = pickRandom(NOUNS);
+  state.currentPerson = pickRandom(PERSONS);
+  state.answered = false;
+  state.wasCorrect = false;
+}
+
+function startQuiz() {
+  // 10 random questions
+  state.quizQueue = [];
+  for (let i = 0; i < 10; i++) {
+    state.quizQueue.push({
+      noun: pickRandom(NOUNS),
+      person: pickRandom(PERSONS),
+    });
+  }
+  state.quizIndex = 0;
+  state.quizResults = [];
+  state.currentNoun = state.quizQueue[0].noun;
+  state.currentPerson = state.quizQueue[0].person;
+  state.answered = false;
+}
+
+function checkAnswer(input) {
+  const correct = getCorrectAnswers(state.currentNoun, state.currentPerson.key);
+  const normalized = input.toLowerCase().trim();
+  return correct.includes(normalized);
+}
+
+// ===================== RENDER =====================
+
+function render() {
+  const app = document.getElementById('app');
+
+  const correctAnswerStr = getPossessiveForm(state.currentNoun, state.currentPerson.key);
+
+  app.innerHTML = `
+    <div class="header">
+      <h1>Türkçe <span>İyelik</span></h1>
+      <p>Possessiv-Formen im Türkischen üben</p>
+    </div>
+
+    <div class="stats-bar">
+      <div class="stat"><span class="stat-dot correct"></span> <span class="stat-value">${state.correctCount}</span> Richtig</div>
+      <div class="stat"><span class="stat-dot wrong"></span> <span class="stat-value">${state.wrongCount}</span> Falsch</div>
+      <div class="stat"><span class="stat-dot streak"></span> <span class="stat-value">${state.streak}</span> Serie${state.bestStreak > 0 ? ` (Best: ${state.bestStreak})` : ''}</div>
+    </div>
+
+    <div class="mode-selector">
+      <button class="mode-btn ${state.mode === 'practice' ? 'active' : ''}" data-mode="practice">Übung</button>
+      <button class="mode-btn ${state.mode === 'quiz' ? 'active' : ''}" data-mode="quiz">Quiz (10 Fragen)</button>
+    </div>
+
+    ${state.mode === 'quiz' && state.quizIndex >= state.quizQueue.length ? renderQuizResult() : renderCard(correctAnswerStr)}
+
+    <div class="ref-section">
+      <button class="ref-toggle ${state.refOpen ? 'open' : ''}" id="refToggle">
+        <span class="arrow">▶</span> Referenz-Tabelle: Possessiv-Endungen
+      </button>
+      <div class="ref-table-wrap ${state.refOpen ? 'open' : ''}" id="refTable">
+        ${renderRefTable()}
+      </div>
+    </div>
+  `;
+
+  // Event listeners
+  document.querySelectorAll('.mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      state.mode = mode;
+      if (mode === 'quiz') startQuiz();
+      else newQuestion();
+      render();
+    });
+  });
+
+  const input = document.getElementById('answerInput');
+  const submitBtn = document.getElementById('submitBtn');
+  const nextBtn = document.getElementById('nextBtn');
+
+  if (input && !state.answered) {
+    input.focus();
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleSubmit();
+    });
+  }
+
+  if (state.answered) {
+    setTimeout(() => {
+      document.addEventListener('keydown', function onEnterNext(e) {
+        if (e.key === 'Enter') {
+          document.removeEventListener('keydown', onEnterNext);
+          handleNext();
+        }
+      });
+    }, 50);
+  }
+
+  if (submitBtn) submitBtn.addEventListener('click', handleSubmit);
+  if (nextBtn) nextBtn.addEventListener('click', handleNext);
+
+  const refToggle = document.getElementById('refToggle');
+  if (refToggle) {
+    refToggle.addEventListener('click', () => {
+      state.refOpen = !state.refOpen;
+      render();
+    });
+  }
+}
+
+function renderCard(correctAnswerStr) {
+  const noun = state.currentNoun;
+  const person = state.currentPerson;
+
+  let quizProgress = '';
+  if (state.mode === 'quiz') {
+    quizProgress = `<div class="prompt-label">Frage ${state.quizIndex + 1} von ${state.quizQueue.length} · Singular</div>`;
+  } else {
+    quizProgress = `<div class="prompt-label">Bilde die Possessiv-Form · Singular</div>`;
+  }
+
+  let feedbackHTML = '';
+  if (state.answered) {
+    if (state.wasCorrect) {
+      feedbackHTML = `<div class="feedback correct">✓ Richtig!</div>`;
+    } else {
+      feedbackHTML = `<div class="feedback wrong">✗ Leider falsch.<span class="correct-answer">${correctAnswerStr}</span></div>`;
+    }
+  }
+
+  return `
+    <div class="card" key="${noun.word}-${person.key}-${state.quizIndex}">
+      ${quizProgress}
+      <div class="prompt-word">${noun.word}</div>
+      <div class="prompt-translation">${noun.meaning}</div>
+      <div class="prompt-person">${person.label}</div>
+      <div class="input-row">
+        <input
+          type="text"
+          id="answerInput"
+          class="answer-input ${state.answered ? (state.wasCorrect ? 'correct' : 'wrong') : ''}"
+          placeholder="Possessiv-Form eingeben…"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+          ${state.answered ? 'disabled' : ''}
+        />
+        ${state.answered
+          ? `<button class="submit-btn" id="nextBtn">Weiter →</button>`
+          : `<button class="submit-btn" id="submitBtn">Prüfen</button>`
+        }
+      </div>
+      ${feedbackHTML}
+    </div>
+  `;
+}
+
+function renderQuizResult() {
+  const total = state.quizResults.length;
+  const correct = state.quizResults.filter(r => r).length;
+  const pct = Math.round((correct / total) * 100);
+
+  let emoji = '🎉';
+  let msg = 'Ausgezeichnet!';
+  if (pct < 50) { emoji = '📚'; msg = 'Weiter üben!'; }
+  else if (pct < 80) { emoji = '👍'; msg = 'Gut gemacht!'; }
+
+  return `
+    <div class="card">
+      <div style="text-align:center;">
+        <div style="font-size:2.5rem; margin-bottom:0.5rem;">${emoji}</div>
+        <div class="prompt-word" style="margin-bottom:0.25rem;">${correct} / ${total}</div>
+        <div class="prompt-translation">${msg} (${pct}%)</div>
+        <button class="submit-btn" id="nextBtn" style="margin-top:1.5rem;">Nochmal spielen</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderRefTable() {
+  return `
+    <table class="ref-table">
+      <thead>
+        <tr>
+          <th>Person</th>
+          <th>Nach Vokal</th>
+          <th>Nach Konsonant</th>
+          <th>Beispiel</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Ben (ich)</td>
+          <td class="suffix">-(y)m</td>
+          <td class="suffix">-(ı/i/u/ü)m</td>
+          <td>araba<b>m</b>, ev<b>im</b></td>
+        </tr>
+        <tr>
+          <td>Sen (du)</td>
+          <td class="suffix">-(y)n</td>
+          <td class="suffix">-(ı/i/u/ü)n</td>
+          <td>araba<b>n</b>, ev<b>in</b></td>
+        </tr>
+        <tr>
+          <td>O (er/sie/es)</td>
+          <td class="suffix">-s(ı/i/u/ü)</td>
+          <td class="suffix">-(ı/i/u/ü)</td>
+          <td>araba<b>sı</b>, ev<b>i</b></td>
+        </tr>
+        <tr>
+          <td>Biz (wir)</td>
+          <td class="suffix">-m(ı/i/u/ü)z</td>
+          <td class="suffix">-(ı/i/u/ü)m(ı/i/u/ü)z</td>
+          <td>araba<b>mız</b>, ev<b>imiz</b></td>
+        </tr>
+        <tr>
+          <td>Siz (ihr/Sie)</td>
+          <td class="suffix">-n(ı/i/u/ü)z</td>
+          <td class="suffix">-(ı/i/u/ü)n(ı/i/u/ü)z</td>
+          <td>araba<b>nız</b>, ev<b>iniz</b></td>
+        </tr>
+        <tr>
+          <td>Onlar (sie)</td>
+          <td class="suffix">-ları/-leri</td>
+          <td class="suffix">-ları/-leri</td>
+          <td>araba<b>ları</b>, ev<b>leri</b></td>
+        </tr>
+      </tbody>
+    </table>
+  `;
+}
+
+// ===================== HANDLERS =====================
+
+function handleSubmit() {
+  const input = document.getElementById('answerInput');
+  if (!input || !input.value.trim()) return;
+
+  const isCorrect = checkAnswer(input.value);
+  state.answered = true;
+  state.wasCorrect = isCorrect;
+
+  if (isCorrect) {
+    state.correctCount++;
+    state.streak++;
+    if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+  } else {
+    state.wrongCount++;
+    state.streak = 0;
+  }
+
+  if (state.mode === 'quiz') {
+    state.quizResults.push(isCorrect);
+  }
+
+  render();
+}
+
+function handleNext() {
+  if (state.mode === 'quiz') {
+    state.quizIndex++;
+    if (state.quizIndex < state.quizQueue.length) {
+      state.currentNoun = state.quizQueue[state.quizIndex].noun;
+      state.currentPerson = state.quizQueue[state.quizIndex].person;
+      state.answered = false;
+    }
+    // If quiz is over, renderQuizResult handles it
+  } else {
+    newQuestion();
+  }
+  render();
+}
+
+// ===================== INIT =====================
+
+newQuestion();
+render();
+</script>
+</body>
+</html>
